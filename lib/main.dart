@@ -209,7 +209,7 @@ class _MyHomePageState extends State<MyHomePage> with WindowListener {
                   labelType: NavigationRailLabelType.all,
                   destinations: const [
                     NavigationRailDestination(
-                      icon: Icon(Icons.colorize),
+                      icon: Icon(Icons.palette),
                       label: Text('Color Picker'),
                     ),
                     NavigationRailDestination(
@@ -274,7 +274,7 @@ class _MyHomePageState extends State<MyHomePage> with WindowListener {
             child: Row(
               children: [
                 const SizedBox(width: 16),
-                const Icon(Icons.colorize, size: 16),
+                const Icon(Icons.palette, size: 16),
                 const SizedBox(width: 8),
                 const Text('Color Picker'),
                 const Spacer(),
