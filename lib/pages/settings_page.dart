@@ -132,18 +132,18 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Widget _buildHotkeySetting(String label, String currentValue, {required VoidCallback onEdit}) {
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Container(
+        Text(
+          label,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
                   color: Colors.grey.withOpacity(0.1),
@@ -165,13 +165,13 @@ class _SettingsPageState extends State<SettingsPage> {
                   ],
                 ),
               ),
-            ],
-          ),
-        ),
-        IconButton(
-          icon: const Icon(Icons.edit),
-          onPressed: _isRecordingHotkey ? null : onEdit,
-          tooltip: 'Edit hotkey',
+            ),
+            IconButton(
+              icon: const Icon(Icons.edit),
+              onPressed: _isRecordingHotkey ? null : onEdit,
+              tooltip: 'Edit hotkey',
+            ),
+          ],
         ),
       ],
     );
