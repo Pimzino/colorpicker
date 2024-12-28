@@ -76,8 +76,6 @@ class StorageService {
       final List<dynamic> jsonList = json.decode(jsonString);
       return jsonList
           .map((json) => ColorHistoryEntry.fromJson(json))
-          .toList()
-          .reversed
           .toList();
     } catch (e) {
       debugPrint('Error loading color history: $e');
@@ -103,7 +101,7 @@ class StorageService {
       history.removeRange(_maxHistorySize, history.length);
     }
 
-    // Save to storage (no need to reverse since we want to maintain the order)
+    // Save to storage with newest first
     await prefs.setString(
       _colorHistoryKey,
       json.encode(history.map((e) => e.toJson()).toList()),
@@ -125,7 +123,7 @@ class StorageService {
         entry.timestamp.isAtSameMomentAs(entryToRemove.timestamp)
     );
 
-    // Save to storage (no need to reverse since we want to maintain the order)
+    // Save to storage with newest first
     await prefs.setString(
       _colorHistoryKey,
       json.encode(history.map((e) => e.toJson()).toList()),
