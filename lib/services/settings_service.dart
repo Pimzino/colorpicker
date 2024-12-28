@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
+import 'storage_service.dart';
 
 class SettingsService extends ChangeNotifier {
-  HotKey _togglePickerHotKey = HotKey(
-    KeyCode.keyP,
-    modifiers: [KeyModifier.control, KeyModifier.shift],
-  );
+  HotKey _togglePickerHotKey;
   bool _isRecordingHotkey = false;
   Function(HotKey)? _currentHandler;
   bool _hotkeyRegistered = false;
+
+  SettingsService() : _togglePickerHotKey = StorageService.loadHotkey();
 
   HotKey get togglePickerHotKey => _togglePickerHotKey;
   bool get isRecordingHotkey => _isRecordingHotkey;
@@ -48,6 +48,7 @@ class SettingsService extends ChangeNotifier {
       
       // Update to the new hotkey
       _togglePickerHotKey = hotkey;
+      await StorageService.saveHotkey(hotkey);
       
       // Re-register with the current handler if one exists
       if (_currentHandler != null) {
