@@ -4,6 +4,7 @@ import 'package:hotkey_manager/hotkey_manager.dart';
 import 'package:window_manager/window_manager.dart';
 import 'services/color_picker_service.dart';
 import 'services/settings_service.dart';
+import 'services/theme_service.dart';
 import 'pages/settings_page.dart';
 
 void main() async {
@@ -34,17 +35,39 @@ void main() async {
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  final ThemeService _theme = ThemeService();
+
+  @override
+  void initState() {
+    super.initState();
+    _theme.addListener(_onThemeChanged);
+  }
+
+  @override
+  void dispose() {
+    _theme.removeListener(_onThemeChanged);
+    super.dispose();
+  }
+
+  void _onThemeChanged() {
+    setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Color Picker',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-        useMaterial3: true,
-      ),
+      theme: _theme.getLightTheme(),
+      darkTheme: _theme.getDarkTheme(),
+      themeMode: _theme.themeMode,
       home: const ColorPickerHome(),
     );
   }

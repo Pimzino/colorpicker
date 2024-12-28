@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
 import '../services/settings_service.dart';
+import '../services/theme_service.dart';
 import '../widgets/hotkey_recorder.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -12,6 +13,7 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   final SettingsService _settings = SettingsService();
+  final ThemeService _theme = ThemeService();
   bool _isRecordingHotkey = false;
 
   @override
@@ -29,65 +31,88 @@ class _SettingsPageState extends State<SettingsPage> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Left column - Hotkeys
+              // Left column - Settings
               Expanded(
                 flex: 3,
-                child: Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Hotkeys',
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                        const SizedBox(height: 24),
-                        _buildHotkeySetting(
-                          'Toggle Color Picker',
-                          _settings.getHotKeyDisplayString(_settings.togglePickerHotKey),
-                          onEdit: () {
-                            setState(() {
-                              _isRecordingHotkey = true;
-                            });
-                          },
-                        ),
-                        if (_isRecordingHotkey) ...[
-                          const SizedBox(height: 16),
-                          HotkeyRecorder(
-                            onHotkeyRecorded: (hotkey) async {
-                              try {
-                                await _settings.updateTogglePickerHotKey(hotkey);
+                child: Column(
+                  children: [
+                    // Hotkeys Card
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Hotkeys',
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                            const SizedBox(height: 24),
+                            _buildHotkeySetting(
+                              'Toggle Color Picker',
+                              _settings.getHotKeyDisplayString(_settings.togglePickerHotKey),
+                              onEdit: () {
                                 setState(() {
-                                  _isRecordingHotkey = false;
+                                  _isRecordingHotkey = true;
                                 });
-                                if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Hotkey updated successfully'),
-                                    ),
-                                  );
-                                }
-                              } catch (e) {
-                                if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Failed to update hotkey'),
-                                    ),
-                                  );
-                                }
-                              }
-                            },
-                            onCancel: () {
-                              setState(() {
-                                _isRecordingHotkey = false;
-                              });
-                            },
-                          ),
-                        ],
-                      ],
+                              },
+                            ),
+                            if (_isRecordingHotkey) ...[
+                              const SizedBox(height: 16),
+                              HotkeyRecorder(
+                                onHotkeyRecorded: (hotkey) async {
+                                  try {
+                                    await _settings.updateTogglePickerHotKey(hotkey);
+                                    setState(() {
+                                      _isRecordingHotkey = false;
+                                    });
+                                    if (mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('Hotkey updated successfully'),
+                                        ),
+                                      );
+                                    }
+                                  } catch (e) {
+                                    if (mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('Failed to update hotkey'),
+                                        ),
+                                      );
+                                    }
+                                  }
+                                },
+                                onCancel: () {
+                                  setState(() {
+                                    _isRecordingHotkey = false;
+                                  });
+                                },
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: 24),
+                    // Appearance Card
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Appearance',
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                            const SizedBox(height: 24),
+                            _buildThemeSetting(),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(width: 24),
@@ -128,6 +153,42 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildThemeSetting() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Theme Mode',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 16),
+        SegmentedButton<ThemeMode>(
+          segments: const [
+            ButtonSegment<ThemeMode>(
+              value: ThemeMode.light,
+              icon: Icon(Icons.light_mode),
+              label: Text('Light'),
+            ),
+            ButtonSegment<ThemeMode>(
+              value: ThemeMode.system,
+              icon: Icon(Icons.brightness_auto),
+              label: Text('System'),
+            ),
+            ButtonSegment<ThemeMode>(
+              value: ThemeMode.dark,
+              icon: Icon(Icons.dark_mode),
+              label: Text('Dark'),
+            ),
+          ],
+          selected: {_theme.themeMode},
+          onSelectionChanged: (Set<ThemeMode> selection) {
+            _theme.setThemeMode(selection.first);
+          },
+        ),
+      ],
     );
   }
 
