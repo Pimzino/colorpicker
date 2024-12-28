@@ -2,27 +2,34 @@ import 'dart:ffi';
 import 'package:ffi/ffi.dart';
 import 'package:flutter/material.dart';
 import 'package:win32/win32.dart';
+import 'storage_service.dart';
 
 class ColorPickerService extends ChangeNotifier {
-  bool _isActive = false;
+  bool _isPicking = false;
   Color _currentColor = Colors.white;
   static const int CLR_INVALID = 0xFFFFFFFF;
 
-  bool get isActive => _isActive;
+  bool get isActive => _isPicking;
   Color get currentColor => _currentColor;
 
   void startPicking() {
-    _isActive = true;
+    _isPicking = true;
     notifyListeners();
   }
 
-  void stopPicking() {
-    _isActive = false;
+  Future<void> stopPicking() async {
+    if (!_isPicking) return;
+
+    _isPicking = false;
+
+    // Save the last picked color to history
+    await StorageService.addColorToHistory(_currentColor);
+
     notifyListeners();
   }
 
   void updateColor() {
-    if (!_isActive) return;
+    if (!_isPicking) return;
 
     final point = calloc<POINT>();
     try {

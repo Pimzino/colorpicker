@@ -3,12 +3,22 @@ import 'package:hotkey_manager/hotkey_manager.dart';
 import 'storage_service.dart';
 
 class SettingsService extends ChangeNotifier {
-  HotKey _togglePickerHotKey;
+  HotKey _togglePickerHotKey = HotKey(
+    KeyCode.keyP,
+    modifiers: [KeyModifier.control, KeyModifier.shift],
+  );
   bool _isRecordingHotkey = false;
   Function(HotKey)? _currentHandler;
   bool _hotkeyRegistered = false;
 
-  SettingsService() : _togglePickerHotKey = StorageService.loadHotkey();
+  SettingsService() {
+    _loadHotkey();
+  }
+
+  Future<void> _loadHotkey() async {
+    _togglePickerHotKey = await StorageService.loadHotkey();
+    notifyListeners();
+  }
 
   HotKey get togglePickerHotKey => _togglePickerHotKey;
   bool get isRecordingHotkey => _isRecordingHotkey;

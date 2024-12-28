@@ -7,6 +7,7 @@ import 'services/settings_service.dart';
 import 'services/color_picker_service.dart';
 import 'pages/color_picker_page.dart';
 import 'pages/settings_page.dart';
+import 'pages/history_page.dart';
 import 'dart:developer' as developer;
 import 'services/theme_service.dart';
 import 'services/storage_service.dart';
@@ -15,9 +16,6 @@ void main() async {
   developer.log('Flutter initialized');
   // Ensure Flutter is initialized
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Initialize storage service
-  await StorageService.init();
   
   // Initialize hotkey manager
   await hotKeyManager.unregisterAll();  // Clean up any existing hotkeys
@@ -279,7 +277,7 @@ class _MyHomePageState extends State<MyHomePage> with WindowListener {
           onCopy: _copyToClipboard,
         );
       case 1:
-        return const Center(child: Text('History - Coming Soon'));
+        return HistoryPage(onCopy: _copyToClipboard);
       case 2:
         return const SettingsPage();
       default:
