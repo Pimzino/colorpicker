@@ -27,9 +27,9 @@ void main() async {
   developer.log('Setting up window properties');
   // Setup window properties
   await windowManager.waitUntilReadyToShow();
-  await windowManager.setSize(const Size(900, 700));
-  await windowManager.setMinimumSize(const Size(900, 700));
-  await windowManager.setMaximumSize(const Size(900, 700));
+  await windowManager.setSize(const Size(900, 750));
+  await windowManager.setMinimumSize(const Size(900, 750));
+  await windowManager.setMaximumSize(const Size(900, 750));
   await windowManager.center();
   await windowManager.setTitleBarStyle(TitleBarStyle.hidden);
   await windowManager.setResizable(false);
@@ -164,13 +164,16 @@ class _MyHomePageState extends State<MyHomePage> with WindowListener {
   }
 
   void _copyToClipboard(String value) {
+    // Clear any existing snackbars
+    ScaffoldMessenger.of(context).clearSnackBars();
+    
     Clipboard.setData(ClipboardData(text: value)).then((_) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Copied to clipboard: $value'),
           behavior: SnackBarBehavior.floating,
           width: 300,
-          duration: const Duration(seconds: 2),
+          duration: const Duration(milliseconds: 1500),
         ),
       );
     });
