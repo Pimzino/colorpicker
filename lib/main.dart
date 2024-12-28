@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'services/settings_service.dart';
 import 'services/color_picker_service.dart';
 import 'pages/color_picker_page.dart';
@@ -58,11 +59,21 @@ class MyApp extends StatelessWidget {
           theme: ThemeData(
             colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
             useMaterial3: true,
+            scrollbarTheme: const ScrollbarThemeData(
+              thickness: MaterialStatePropertyAll(0),
+              thumbVisibility: MaterialStatePropertyAll(false),
+              trackVisibility: MaterialStatePropertyAll(false),
+            ),
           ),
           darkTheme: ThemeData.dark(useMaterial3: true).copyWith(
             colorScheme: ColorScheme.fromSeed(
               seedColor: Colors.blue,
               brightness: Brightness.dark,
+            ),
+            scrollbarTheme: const ScrollbarThemeData(
+              thickness: MaterialStatePropertyAll(0),
+              thumbVisibility: MaterialStatePropertyAll(false),
+              trackVisibility: MaterialStatePropertyAll(false),
             ),
           ),
           themeMode: themeService.themeMode,
@@ -210,6 +221,33 @@ class _MyHomePageState extends State<MyHomePage> with WindowListener {
                       label: Text('Settings'),
                     ),
                   ],
+                  trailing: Expanded(
+                    child: Align(
+                      alignment: Alignment.bottomCenter,
+                      child: Padding(
+                        padding: const EdgeInsets.only(bottom: 16.0),
+                        child: IconButton(
+                          icon: const Icon(Icons.coffee),
+                          tooltip: 'Buy Me a Coffee',
+                          onPressed: () async {
+                            final Uri url = Uri.parse('https://www.buymeacoffee.com/Pimzino');
+                            if (!await launchUrl(url)) {
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Could not open donation link'),
+                                    behavior: SnackBarBehavior.floating,
+                                    width: 300,
+                                    duration: Duration(milliseconds: 1500),
+                                  ),
+                                );
+                              }
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
                 const VerticalDivider(thickness: 1, width: 1),
                 Expanded(

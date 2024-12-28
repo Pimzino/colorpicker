@@ -52,118 +52,109 @@ class _HistoryPageState extends State<HistoryPage> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<ColorHistoryEntry>>(
-      future: StorageService.loadColorHistory(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        final history = snapshot.data ?? [];
-
-        return Padding(
-          padding: const EdgeInsets.all(32.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return Padding(
+      padding: const EdgeInsets.all(32.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Text(
-                    'Color History',
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const Spacer(),
-                  if (history.isNotEmpty)
-                    FilledButton.tonalIcon(
-                      onPressed: () async {
-                        final confirmed = await showDialog<bool>(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            title: const Text('Clear History'),
-                            content: const Text('Are you sure you want to clear your color history?'),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.of(context).pop(false),
-                                child: const Text('Cancel'),
-                              ),
-                              FilledButton(
-                                onPressed: () => Navigator.of(context).pop(true),
-                                child: const Text('Clear'),
-                              ),
-                            ],
-                          ),
-                        );
-
-                        if (confirmed == true) {
-                          await StorageService.clearColorHistory();
-                          if (mounted) {
-                            setState(() {});
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Color history cleared'),
-                                behavior: SnackBarBehavior.floating,
-                                width: 200,
-                              ),
-                            );
-                          }
-                        }
-                      },
-                      icon: const Icon(Icons.delete_outline),
-                      label: const Text('Clear History'),
-                    ),
-                ],
+              Text(
+                'History',
+                style: Theme.of(context).textTheme.headlineMedium,
               ),
-              const SizedBox(height: 24),
-              if (history.isEmpty)
-                Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(32.0),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.history,
-                          size: 64,
-                          color: Theme.of(context).colorScheme.outline,
+              FilledButton.tonalIcon(
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Clear History'),
+                      content: const Text('Are you sure you want to clear all history?'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: const Text('Cancel'),
                         ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'No colors in history',
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            color: Theme.of(context).colorScheme.outline,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Colors will appear here when you pick them',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Theme.of(context).colorScheme.outline,
-                          ),
+                        FilledButton(
+                          onPressed: () {
+                            StorageService.clearColorHistory();
+                            setState(() {});
+                            Navigator.of(context).pop();
+                          },
+                          child: const Text('Clear'),
                         ),
                       ],
                     ),
-                  ),
-                )
-              else
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: history.length,
-                    itemBuilder: (context, index) {
-                      final entry = history[index];
-                      return _ColorHistoryTile(
-                        entry: entry,
-                        onCopy: widget.onCopy,
-                        onDelete: () => _deleteHistoryEntry(entry),
-                      );
-                    },
-                  ),
-                ),
+                  );
+                },
+                icon: const Icon(Icons.delete_outline),
+                label: const Text('Clear History'),
+              ),
             ],
           ),
-        );
-      },
+          const SizedBox(height: 24),
+          Expanded(
+            child: ScrollConfiguration(
+              behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
+              child: FutureBuilder<List<ColorHistoryEntry>>(
+                future: StorageService.loadColorHistory(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    return Center(
+                      child: Text(
+                        'No colors in history',
+                        style: Theme.of(context).textTheme.bodyLarge,
+                      ),
+                    );
+                  }
+
+                  return ListView.builder(
+                    itemCount: snapshot.data!.length,
+                    itemBuilder: (context, index) {
+                      final entry = snapshot.data![index];
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 8.0),
+                        child: _ColorHistoryTile(
+                          entry: entry,
+                          onCopy: widget.onCopy,
+                          onDelete: () {
+                            showDialog(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: const Text('Delete Color'),
+                                content: const Text('Are you sure you want to delete this color from history?'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.of(context).pop(),
+                                    child: const Text('Cancel'),
+                                  ),
+                                  FilledButton(
+                                    onPressed: () {
+                                      StorageService.removeFromHistory(entry);
+                                      setState(() {});
+                                      Navigator.of(context).pop();
+                                    },
+                                    child: const Text('Delete'),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

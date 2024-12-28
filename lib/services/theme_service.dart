@@ -15,11 +15,15 @@ class ThemeService extends ChangeNotifier {
     notifyListeners();
   }
 
-  void setThemeMode(ThemeMode mode) async {
-    if (_themeMode != mode) {
-      _themeMode = mode;
-      await StorageService.saveThemeMode(mode);
-      notifyListeners();
-    }
+  Future<void> setThemeMode(ThemeMode mode) async {
+    _themeMode = mode;
+    await StorageService.saveThemeMode(mode);
+    notifyListeners();
+  }
+
+  Future<void> resetToDefaults() async {
+    // Reset theme mode to system
+    await setThemeMode(ThemeMode.system);
+    notifyListeners();
   }
 } 

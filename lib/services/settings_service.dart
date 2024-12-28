@@ -74,6 +74,17 @@ class SettingsService extends ChangeNotifier {
     }
   }
 
+  Future<void> resetToDefaults() async {
+    // Reset hotkey to default (Ctrl + Shift + P)
+    await updateTogglePickerHotKey(
+      HotKey(
+        KeyCode.keyP,
+        modifiers: [KeyModifier.control, KeyModifier.shift],
+      ),
+    );
+    notifyListeners();
+  }
+
   String getHotKeyDisplayString(HotKey hotkey) {
     final List<String> parts = [];
     

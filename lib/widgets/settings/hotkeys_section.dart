@@ -12,7 +12,7 @@ class HotkeysSection extends StatelessWidget {
     
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -29,51 +29,51 @@ class HotkeysSection extends StatelessWidget {
                 onCancel: () => settings.stopRecordingHotkey(),
               )
             else
-              _buildHotkeyRow(
-                context,
-                'Toggle Color Picker',
-                settings.getHotKeyDisplayString(settings.togglePickerHotKey),
-                () => settings.startRecordingHotkey(),
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Toggle Color Picker'),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.5),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.keyboard, size: 16),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    settings.getHotKeyDisplayString(settings.togglePickerHotKey),
+                                    style: Theme.of(context).textTheme.bodyMedium,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.edit),
+                              onPressed: () {
+                                settings.startRecordingHotkey();
+                              },
+                              tooltip: 'Edit hotkey',
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildHotkeyRow(BuildContext context, String label, String hotkey, VoidCallback onEdit) {
-    return Row(
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label),
-              const SizedBox(height: 8),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.keyboard, size: 20),
-                    const SizedBox(width: 8),
-                    Text(hotkey),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-        IconButton(
-          icon: const Icon(Icons.edit),
-          onPressed: onEdit,
-          tooltip: 'Edit hotkey',
-        ),
-      ],
     );
   }
 } 

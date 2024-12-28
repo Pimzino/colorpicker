@@ -5,6 +5,7 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   hotkey_manager
   screen_retriever
+  url_launcher_windows
   window_manager
 )
 
