@@ -8,6 +8,7 @@ import 'services/color_picker_service.dart';
 import 'pages/color_picker_page.dart';
 import 'pages/settings_page.dart';
 import 'dart:developer' as developer;
+import 'services/theme_service.dart';
 
 void main() async {
   developer.log('Flutter initialized');
@@ -28,6 +29,7 @@ void main() async {
   await windowManager.setMinimumSize(const Size(900, 700));
   await windowManager.setMaximumSize(const Size(900, 700));
   await windowManager.center();
+  await windowManager.setTitleBarStyle(TitleBarStyle.hidden);
   await windowManager.show();
   await windowManager.setPreventClose(true);
   await windowManager.setSkipTaskbar(false);
@@ -45,16 +47,24 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => SettingsService()),
         ChangeNotifierProvider(create: (_) => ColorPickerService()),
+        ChangeNotifierProvider(create: (_) => ThemeService()),
       ],
-      child: MaterialApp(
-        title: 'Color Picker',
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-          useMaterial3: true,
+      child: Consumer<ThemeService>(
+        builder: (context, themeService, _) => MaterialApp(
+          title: 'Color Picker',
+          theme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+            useMaterial3: true,
+          ),
+          darkTheme: ThemeData.dark(useMaterial3: true).copyWith(
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: Colors.blue,
+              brightness: Brightness.dark,
+            ),
+          ),
+          themeMode: themeService.themeMode,
+          home: const MyHomePage(),
         ),
-        darkTheme: ThemeData.dark(useMaterial3: true),
-        themeMode: ThemeMode.dark,
-        home: const MyHomePage(),
       ),
     );
   }
@@ -67,14 +77,21 @@ class MyHomePage extends StatefulWidget {
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
+class _MyHomePageState extends State<MyHomePage> with WindowListener {
   int _selectedIndex = 0;
   bool _isInitialized = false;
 
   @override
   void initState() {
     super.initState();
+    windowManager.addListener(this);
     _initializeApp();
+  }
+
+  @override
+  void dispose() {
+    windowManager.removeListener(this);
+    super.dispose();
   }
 
   Future<void> _initializeApp() async {
@@ -154,36 +171,87 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Row(
+      body: Column(
         children: [
-          NavigationRail(
-            selectedIndex: _selectedIndex,
-            onDestinationSelected: (int index) {
-              setState(() {
-                _selectedIndex = index;
-              });
-            },
-            labelType: NavigationRailLabelType.all,
-            destinations: const [
-              NavigationRailDestination(
-                icon: Icon(Icons.colorize),
-                label: Text('Color Picker'),
-              ),
-              NavigationRailDestination(
-                icon: Icon(Icons.history),
-                label: Text('History'),
-              ),
-              NavigationRailDestination(
-                icon: Icon(Icons.settings),
-                label: Text('Settings'),
-              ),
-            ],
-          ),
-          const VerticalDivider(thickness: 1, width: 1),
+          _buildTitleBar(),
           Expanded(
-            child: _buildCurrentView(),
+            child: Row(
+              children: [
+                NavigationRail(
+                  selectedIndex: _selectedIndex,
+                  onDestinationSelected: (int index) {
+                    setState(() {
+                      _selectedIndex = index;
+                    });
+                  },
+                  labelType: NavigationRailLabelType.all,
+                  destinations: const [
+                    NavigationRailDestination(
+                      icon: Icon(Icons.colorize),
+                      label: Text('Color Picker'),
+                    ),
+                    NavigationRailDestination(
+                      icon: Icon(Icons.history),
+                      label: Text('History'),
+                    ),
+                    NavigationRailDestination(
+                      icon: Icon(Icons.settings),
+                      label: Text('Settings'),
+                    ),
+                  ],
+                ),
+                const VerticalDivider(thickness: 1, width: 1),
+                Expanded(
+                  child: _buildCurrentView(),
+                ),
+              ],
+            ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildTitleBar() {
+    return GestureDetector(
+      onPanStart: (details) {
+        windowManager.startDragging();
+      },
+      child: Container(
+        height: 32,
+        color: Theme.of(context).colorScheme.surface,
+        child: Row(
+          children: [
+            const SizedBox(width: 16),
+            const Icon(Icons.colorize, size: 16),
+            const SizedBox(width: 8),
+            const Text('Color Picker'),
+            const Spacer(),
+            _WindowButton(
+              icon: Icons.minimize,
+              onPressed: () async {
+                await windowManager.minimize();
+              },
+            ),
+            _WindowButton(
+              icon: Icons.crop_square,
+              onPressed: () async {
+                if (await windowManager.isMaximized()) {
+                  await windowManager.unmaximize();
+                } else {
+                  await windowManager.maximize();
+                }
+              },
+            ),
+            _WindowButton(
+              icon: Icons.close,
+              onPressed: () async {
+                await windowManager.close();
+              },
+              isClose: true,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -207,5 +275,33 @@ class _MyHomePageState extends State<MyHomePage> {
       default:
         return const SizedBox.shrink();
     }
+  }
+}
+
+class _WindowButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onPressed;
+  final bool isClose;
+
+  const _WindowButton({
+    required this.icon,
+    required this.onPressed,
+    this.isClose = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      onPressed: onPressed,
+      icon: Icon(icon, size: 16),
+      style: IconButton.styleFrom(
+        minimumSize: const Size(46, 32),
+        shape: const RoundedRectangleBorder(),
+        foregroundColor: Theme.of(context).colorScheme.onSurface,
+        hoverColor: isClose 
+          ? Theme.of(context).colorScheme.error.withOpacity(0.1)
+          : Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+      ),
+    );
   }
 }

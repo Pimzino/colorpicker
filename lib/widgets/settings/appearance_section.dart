@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../services/theme_service.dart';
 
 class AppearanceSection extends StatelessWidget {
@@ -6,6 +7,8 @@ class AppearanceSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeService = Provider.of<ThemeService>(context);
+    
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(24.0),
@@ -43,9 +46,11 @@ class AppearanceSection extends StatelessWidget {
                       label: Text('Dark'),
                     ),
                   ],
-                  selected: {ThemeMode.system},
+                  selected: {themeService.themeMode},
                   onSelectionChanged: (Set<ThemeMode> selected) {
-                    // TODO: Implement theme switching
+                    if (selected.isNotEmpty) {
+                      themeService.setThemeMode(selected.first);
+                    }
                   },
                 ),
               ],
