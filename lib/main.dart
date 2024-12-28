@@ -52,6 +52,7 @@ class MyApp extends StatelessWidget {
       child: Consumer<ThemeService>(
         builder: (context, themeService, _) => MaterialApp(
           title: 'Color Picker',
+          debugShowCheckedModeBanner: false,
           theme: ThemeData(
             colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
             useMaterial3: true,
@@ -213,46 +214,51 @@ class _MyHomePageState extends State<MyHomePage> with WindowListener {
   }
 
   Widget _buildTitleBar() {
-    return GestureDetector(
-      onPanStart: (details) {
-        windowManager.startDragging();
-      },
-      child: Container(
-        height: 32,
-        color: Theme.of(context).colorScheme.surface,
-        child: Row(
-          children: [
-            const SizedBox(width: 16),
-            const Icon(Icons.colorize, size: 16),
-            const SizedBox(width: 8),
-            const Text('Color Picker'),
-            const Spacer(),
-            _WindowButton(
-              icon: Icons.minimize,
-              onPressed: () async {
-                await windowManager.minimize();
-              },
+    return Column(
+      children: [
+        GestureDetector(
+          onPanStart: (details) {
+            windowManager.startDragging();
+          },
+          child: Container(
+            height: 32,
+            color: Theme.of(context).colorScheme.surface,
+            child: Row(
+              children: [
+                const SizedBox(width: 16),
+                const Icon(Icons.colorize, size: 16),
+                const SizedBox(width: 8),
+                const Text('Color Picker'),
+                const Spacer(),
+                _WindowButton(
+                  icon: Icons.minimize,
+                  onPressed: () async {
+                    await windowManager.minimize();
+                  },
+                ),
+                _WindowButton(
+                  icon: Icons.crop_square,
+                  onPressed: () async {
+                    if (await windowManager.isMaximized()) {
+                      await windowManager.unmaximize();
+                    } else {
+                      await windowManager.maximize();
+                    }
+                  },
+                ),
+                _WindowButton(
+                  icon: Icons.close,
+                  onPressed: () async {
+                    await windowManager.close();
+                  },
+                  isClose: true,
+                ),
+              ],
             ),
-            _WindowButton(
-              icon: Icons.crop_square,
-              onPressed: () async {
-                if (await windowManager.isMaximized()) {
-                  await windowManager.unmaximize();
-                } else {
-                  await windowManager.maximize();
-                }
-              },
-            ),
-            _WindowButton(
-              icon: Icons.close,
-              onPressed: () async {
-                await windowManager.close();
-              },
-              isClose: true,
-            ),
-          ],
+          ),
         ),
-      ),
+        const Divider(height: 1, thickness: 1),
+      ],
     );
   }
 
