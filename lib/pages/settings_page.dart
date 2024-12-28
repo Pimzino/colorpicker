@@ -1,10 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:hotkey_manager/hotkey_manager.dart';
 import '../services/settings_service.dart';
+import '../widgets/hotkey_recorder.dart';
 
-class SettingsPage extends StatelessWidget {
+class SettingsPage extends StatefulWidget {
+  const SettingsPage({super.key});
+
+  @override
+  State<SettingsPage> createState() => _SettingsPageState();
+}
+
+class _SettingsPageState extends State<SettingsPage> {
   final SettingsService _settings = SettingsService();
-
-  SettingsPage({super.key});
+  bool _isRecordingHotkey = false;
 
   @override
   Widget build(BuildContext context) {
@@ -39,14 +47,44 @@ class SettingsPage extends StatelessWidget {
                           'Toggle Color Picker',
                           _settings.getHotKeyDisplayString(_settings.togglePickerHotKey),
                           onEdit: () {
-                            // TODO: Implement hotkey editing
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Hotkey editing coming soon!'),
-                              ),
-                            );
+                            setState(() {
+                              _isRecordingHotkey = true;
+                            });
                           },
                         ),
+                        if (_isRecordingHotkey) ...[
+                          const SizedBox(height: 16),
+                          HotkeyRecorder(
+                            onHotkeyRecorded: (hotkey) async {
+                              try {
+                                await _settings.updateTogglePickerHotKey(hotkey);
+                                setState(() {
+                                  _isRecordingHotkey = false;
+                                });
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Hotkey updated successfully'),
+                                    ),
+                                  );
+                                }
+                              } catch (e) {
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Failed to update hotkey'),
+                                    ),
+                                  );
+                                }
+                              }
+                            },
+                            onCancel: () {
+                              setState(() {
+                                _isRecordingHotkey = false;
+                              });
+                            },
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -132,7 +170,7 @@ class SettingsPage extends StatelessWidget {
         ),
         IconButton(
           icon: const Icon(Icons.edit),
-          onPressed: onEdit,
+          onPressed: _isRecordingHotkey ? null : onEdit,
           tooltip: 'Edit hotkey',
         ),
       ],

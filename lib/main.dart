@@ -88,6 +88,7 @@ class _ColorPickerHomeState extends State<ColorPickerHome> {
   @override
   void dispose() {
     _colorPicker.removeListener(_onColorChanged);
+    hotKeyManager.unregisterAll();
     super.dispose();
   }
 
@@ -98,18 +99,15 @@ class _ColorPickerHomeState extends State<ColorPickerHome> {
   }
 
   Future<void> _setupHotkeys() async {
-    await hotKeyManager.register(
-      _settings.togglePickerHotKey,
-      keyDownHandler: (_) {
-        setState(() {
-          if (_colorPicker.isActive) {
-            _colorPicker.stopPicking();
-          } else {
-            _colorPicker.startPicking();
-          }
-        });
-      },
-    );
+    await _settings.registerHotkeyHandler((hotkey) {
+      setState(() {
+        if (_colorPicker.isActive) {
+          _colorPicker.stopPicking();
+        } else {
+          _colorPicker.startPicking();
+        }
+      });
+    });
   }
 
   void _copyToClipboard(String text) {
