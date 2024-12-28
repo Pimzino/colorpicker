@@ -6,6 +6,7 @@ import 'services/color_picker_service.dart';
 import 'services/settings_service.dart';
 import 'services/theme_service.dart';
 import 'pages/settings_page.dart';
+import 'pages/color_picker_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -147,125 +148,24 @@ class _ColorPickerHomeState extends State<ColorPickerHome> {
   Widget _buildCurrentView() {
     switch (_selectedIndex) {
       case 0:
-        return _buildColorPickerView();
+        return ColorPickerPage(
+          selectedColor: _selectedColor,
+          colorPicker: _colorPicker,
+          settings: _settings,
+          onCopy: _copyToClipboard,
+        );
       case 1:
         return const Center(child: Text('History View - Coming Soon'));
       case 2:
-        return SettingsPage();
+        return const SettingsPage();
       default:
-        return _buildColorPickerView();
+        return ColorPickerPage(
+          selectedColor: _selectedColor,
+          colorPicker: _colorPicker,
+          settings: _settings,
+          onCopy: _copyToClipboard,
+        );
     }
-  }
-
-  Widget _buildColorPickerView() {
-    final cmyk = _colorPicker.rgbToCmyk(_selectedColor);
-    
-    return Padding(
-      padding: const EdgeInsets.all(24.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Left Column - Color Preview
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 300,
-                height: 300,
-                decoration: BoxDecoration(
-                  color: _selectedColor,
-                  border: Border.all(color: Colors.grey),
-                  borderRadius: BorderRadius.circular(8),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-              // Status Card
-              SizedBox(
-                width: 300,
-                child: Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              _colorPicker.isActive ? Icons.radio_button_on : Icons.radio_button_off,
-                              color: _colorPicker.isActive ? Colors.green : Colors.red,
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'Status: ${_colorPicker.isActive ? "Active" : "Inactive"}',
-                                style: Theme.of(context).textTheme.titleMedium,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Press ${_settings.getHotKeyDisplayString(_settings.togglePickerHotKey)} to start/stop picking',
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(width: 24),
-          // Right Column - Color Values
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Color Values:',
-                  style: Theme.of(context).textTheme.headlineMedium,
-                ),
-                const SizedBox(height: 16),
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ColorValueTile(
-                          label: 'HEX',
-                          value: '#${_selectedColor.value.toRadixString(16).padLeft(8, '0').toUpperCase()}',
-                          onCopy: () => _copyToClipboard('#${_selectedColor.value.toRadixString(16).padLeft(8, '0').toUpperCase()}'),
-                        ),
-                        const Divider(),
-                        ColorValueTile(
-                          label: 'RGB',
-                          value: '${_selectedColor.red}, ${_selectedColor.green}, ${_selectedColor.blue}',
-                          onCopy: () => _copyToClipboard('${_selectedColor.red}, ${_selectedColor.green}, ${_selectedColor.blue}'),
-                        ),
-                        const Divider(),
-                        ColorValueTile(
-                          label: 'CMYK',
-                          value: '${cmyk['c']}%, ${cmyk['m']}%, ${cmyk['y']}%, ${cmyk['k']}%',
-                          onCopy: () => _copyToClipboard('${cmyk['c']}%, ${cmyk['m']}%, ${cmyk['y']}%, ${cmyk['k']}%'),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   @override
@@ -286,45 +186,6 @@ class _ColorPickerHomeState extends State<ColorPickerHome> {
           const VerticalDivider(thickness: 1, width: 1),
           Expanded(
             child: _buildCurrentView(),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class ColorValueTile extends StatelessWidget {
-  final String label;
-  final String value;
-  final VoidCallback onCopy;
-
-  const ColorValueTile({
-    super.key,
-    required this.label,
-    required this.value,
-    required this.onCopy,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 60,
-            child: Text(
-              label,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-          Expanded(
-            child: Text(value),
-          ),
-          IconButton(
-            icon: const Icon(Icons.copy, size: 20),
-            onPressed: onCopy,
-            tooltip: 'Copy to clipboard',
           ),
         ],
       ),
