@@ -1,91 +1,98 @@
 import 'package:flutter/material.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
 
-class SettingsService {
-  static final SettingsService _instance = SettingsService._internal();
-  factory SettingsService() => _instance;
-  SettingsService._internal();
-
+class SettingsService extends ChangeNotifier {
   HotKey _togglePickerHotKey = HotKey(
     KeyCode.keyP,
     modifiers: [KeyModifier.control, KeyModifier.shift],
-    scope: HotKeyScope.system,
   );
-
-  Function(HotKey)? _hotkeyHandler;
+  bool _isRecordingHotkey = false;
+  Function(HotKey)? _currentHandler;
+  bool _hotkeyRegistered = false;
 
   HotKey get togglePickerHotKey => _togglePickerHotKey;
+  bool get isRecordingHotkey => _isRecordingHotkey;
 
-  Future<void> registerHotkeyHandler(Function(HotKey) handler) async {
-    _hotkeyHandler = handler;
-    await _registerCurrentHotkey();
-  }
-
-  Future<void> _registerCurrentHotkey() async {
-    if (_hotkeyHandler != null) {
-      try {
-        await hotKeyManager.register(
-          _togglePickerHotKey,
-          keyDownHandler: (_) => _hotkeyHandler!(_togglePickerHotKey),
-        );
-      } catch (e) {
-        debugPrint('Error registering hotkey: $e');
-        rethrow;
-      }
-    }
-  }
-
-  Future<void> updateTogglePickerHotKey(HotKey newHotKey) async {
+  void startRecordingHotkey() async {
     try {
-      // Unregister the old hotkey
-      await hotKeyManager.unregister(_togglePickerHotKey);
-      
-      // Update the hotkey
-      _togglePickerHotKey = newHotKey;
-
-      // Register the new hotkey
-      await _registerCurrentHotkey();
-    } catch (e) {
-      debugPrint('Error updating hotkey: $e');
-      // If something goes wrong, try to restore the previous hotkey
-      if (_togglePickerHotKey != newHotKey) {
-        await _registerCurrentHotkey();
+      // Unregister current hotkey before recording
+      if (_hotkeyRegistered) {
+        await hotKeyManager.unregister(_togglePickerHotKey);
+        _hotkeyRegistered = false;
       }
-      rethrow;
+      _isRecordingHotkey = true;
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Failed to start recording hotkey: $e');
     }
   }
 
-  String getHotKeyDisplayString(HotKey hotKey) {
-    final modifiers = hotKey.modifiers?.map((m) {
-      switch (m) {
-        case KeyModifier.alt:
-          return 'Alt';
-        case KeyModifier.control:
-          return 'Ctrl';
-        case KeyModifier.shift:
-          return 'Shift';
-        case KeyModifier.meta:
-          return 'Win';
-        default:
-          return '';
-      }
-    }).join(' + ');
+  void stopRecordingHotkey() {
+    _isRecordingHotkey = false;
+    notifyListeners();
+  }
 
-    final key = keyCodeToString(hotKey.keyCode);
-    return '${modifiers ?? ''} + $key';
+  Future<void> updateTogglePickerHotKey(HotKey hotkey) async {
+    try {
+      // Always try to unregister the old hotkey first
+      if (_hotkeyRegistered) {
+        try {
+          await hotKeyManager.unregister(_togglePickerHotKey);
+        } catch (e) {
+          debugPrint('Failed to unregister old hotkey: $e');
+          // Continue anyway as we want to update the hotkey
+        }
+      }
+      
+      _hotkeyRegistered = false;
+      
+      // Update to the new hotkey
+      _togglePickerHotKey = hotkey;
+      
+      // Re-register with the current handler if one exists
+      if (_currentHandler != null) {
+        await registerHotkeyHandler(_currentHandler!);
+      }
+
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Failed to update hotkey: $e');
+      rethrow;
+    } finally {
+      stopRecordingHotkey();
+    }
+  }
+
+  String getHotKeyDisplayString(HotKey hotkey) {
+    final List<String> parts = [];
+    
+    if (hotkey.modifiers?.contains(KeyModifier.control) ?? false) {
+      parts.add('Ctrl');
+    }
+    if (hotkey.modifiers?.contains(KeyModifier.shift) ?? false) {
+      parts.add('Shift');
+    }
+    if (hotkey.modifiers?.contains(KeyModifier.alt) ?? false) {
+      parts.add('Alt');
+    }
+    
+    String keyName = keyCodeToString(hotkey.keyCode);
+    parts.add(keyName);
+    
+    return parts.join(' + ');
   }
 
   String keyCodeToString(KeyCode keyCode) {
-    final keyString = keyCode.toString().toLowerCase();
+    final keyString = keyCode.toString().replaceAll('KeyCode.', '');
     
     // Handle letter keys
-    if (keyString.startsWith('keycode.key')) {
-      return keyString.substring(11).toUpperCase();
+    if (keyString.startsWith('key')) {
+      return keyString.substring(3).toUpperCase();
     }
-    
+
     // Handle function keys
-    if (keyString.startsWith('keycode.f') && keyString.length <= 11) {
-      return keyString.substring(8).toUpperCase();
+    if (keyString.startsWith('f') && keyString.length <= 3) {
+      return keyString.toUpperCase();
     }
     
     // Handle special keys
@@ -94,9 +101,74 @@ class SettingsService {
         return 'Space';
       case KeyCode.escape:
         return 'Esc';
+      case KeyCode.enter:
+        return 'Enter';
+      case KeyCode.tab:
+        return 'Tab';
+      case KeyCode.capsLock:
+        return 'Caps Lock';
+      case KeyCode.delete:
+        return 'Delete';
+      case KeyCode.end:
+        return 'End';
+      case KeyCode.home:
+        return 'Home';
+      case KeyCode.pageDown:
+        return 'Page Down';
+      case KeyCode.pageUp:
+        return 'Page Up';
+      case KeyCode.arrowDown:
+        return '↓';
+      case KeyCode.arrowLeft:
+        return '←';
+      case KeyCode.arrowRight:
+        return '→';
+      case KeyCode.arrowUp:
+        return '↑';
       default:
-        // For any other keys, just remove the KeyCode. prefix and capitalize
-        return keyString.substring(8).toUpperCase();
+        // Capitalize first letter and format remaining text
+        return keyString.substring(0, 1).toUpperCase() + 
+               keyString.substring(1).replaceAllMapped(
+                 RegExp(r'[A-Z]'),
+                 (match) => ' ${match.group(0)}'
+               );
+    }
+  }
+
+  Future<void> registerHotkeyHandler(Function(HotKey) handler) async {
+    try {
+      _currentHandler = handler;
+      
+      // Unregister any existing hotkey first
+      if (_hotkeyRegistered) {
+        try {
+          await hotKeyManager.unregister(_togglePickerHotKey);
+        } catch (e) {
+          debugPrint('Failed to unregister existing hotkey: $e');
+          // Continue anyway as we want to register the new handler
+        }
+      }
+      
+      _hotkeyRegistered = false;
+
+      // Register the new hotkey
+      await hotKeyManager.register(
+        _togglePickerHotKey,
+        keyDownHandler: (_) {
+          try {
+            handler(_togglePickerHotKey);
+          } catch (e) {
+            debugPrint('Error in hotkey handler: $e');
+          }
+        },
+      );
+      
+      _hotkeyRegistered = true;
+      debugPrint('Successfully registered hotkey: ${getHotKeyDisplayString(_togglePickerHotKey)}');
+    } catch (e) {
+      debugPrint('Failed to register hotkey handler: $e');
+      _hotkeyRegistered = false;
+      rethrow;
     }
   }
 } 

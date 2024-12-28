@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
 import '../services/settings_service.dart';
+import 'package:provider/provider.dart';
 
 class HotkeyRecorder extends StatefulWidget {
   final Function(HotKey) onHotkeyRecorded;
@@ -18,40 +19,138 @@ class HotkeyRecorder extends StatefulWidget {
 }
 
 class _HotkeyRecorderState extends State<HotkeyRecorder> {
-  final Set<KeyModifier> _activeModifiers = {};
-  KeyCode? _activeKey;
-  final SettingsService _settings = SettingsService();
+  Set<LogicalKeyboardKey> _recordedKeys = {};
+  bool _isRecording = true;
+  final FocusNode _focusNode = FocusNode();
+  String? _errorMessage;
+
+  bool get _isValidCombination {
+    if (_recordedKeys.isEmpty) return false;
+    
+    bool hasNonModifier = _recordedKeys.any((key) => !_isModifierKey(key));
+    return hasNonModifier;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode.requestFocus();
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return RawKeyboardListener(
-      focusNode: FocusNode()..requestFocus(),
-      onKey: _handleKeyEvent,
+    return Focus(
+      focusNode: _focusNode,
+      autofocus: true,
+      onKeyEvent: (_, event) {
+        _handleKeyEvent(event);
+        return KeyEventResult.handled;
+      },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: Colors.blue.withOpacity(0.1),
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.blue.withOpacity(0.3)),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.primary.withAlpha(100),
+          ),
         ),
-        child: Row(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(Icons.keyboard, size: 20, color: Colors.blue),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                _getDisplayText(),
-                style: const TextStyle(
-                  fontFamily: 'monospace',
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
+            Row(
+              children: [
+                Icon(
+                  Icons.keyboard,
+                  color: Theme.of(context).colorScheme.primary,
                 ),
+                const SizedBox(width: 8),
+                Text(
+                  'Record Hotkey',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Press the keys you want to use as your hotkey.\nYou can use any combination of modifier keys (Ctrl, Shift, Alt)\nwith one other key.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
-            IconButton(
-              icon: const Icon(Icons.close, size: 20),
-              onPressed: widget.onCancel,
-              tooltip: 'Cancel',
+            const SizedBox(height: 16),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: _errorMessage != null 
+                    ? Theme.of(context).colorScheme.error
+                    : Theme.of(context).colorScheme.outline.withOpacity(0.5),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          _getDisplayText(),
+                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            color: _recordedKeys.isEmpty
+                                ? Theme.of(context).colorScheme.onSurfaceVariant
+                                : Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                      ),
+                      if (_recordedKeys.isNotEmpty)
+                        IconButton(
+                          icon: const Icon(Icons.refresh),
+                          tooltip: 'Reset',
+                          onPressed: _resetHotkey,
+                          visualDensity: VisualDensity.compact,
+                          style: IconButton.styleFrom(
+                            foregroundColor: Theme.of(context).colorScheme.primary,
+                          ),
+                        ),
+                    ],
+                  ),
+                  if (_errorMessage != null) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      _errorMessage!,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: widget.onCancel,
+                  child: const Text('Cancel'),
+                ),
+                const SizedBox(width: 8),
+                FilledButton(
+                  onPressed: _isValidCombination ? _saveHotkey : null,
+                  child: const Text('Save'),
+                ),
+              ],
             ),
           ],
         ),
@@ -60,121 +159,184 @@ class _HotkeyRecorderState extends State<HotkeyRecorder> {
   }
 
   String _getDisplayText() {
-    if (_activeModifiers.isEmpty && _activeKey == null) {
-      return 'Press keys to record hotkey...';
+    if (_recordedKeys.isEmpty) {
+      return 'Press your desired key combination...';
     }
 
-    final modifiers = _activeModifiers.map((m) {
-      switch (m) {
-        case KeyModifier.alt:
-          return 'Alt';
-        case KeyModifier.control:
-          return 'Ctrl';
-        case KeyModifier.shift:
-          return 'Shift';
-        case KeyModifier.meta:
-          return 'Win';
-        default:
-          return '';
-      }
-    }).join(' + ');
+    final modifiers = <KeyModifier>[];
+    final nonModifierKeys = <KeyCode>[];
 
-    final key = _activeKey != null ? _settings.keyCodeToString(_activeKey!) : '';
-    
-    if (modifiers.isEmpty) {
-      return key;
-    }
-    
-    return key.isEmpty ? modifiers : '$modifiers + $key';
-  }
-
-  KeyCode? _mapLogicalKeyToKeyCode(LogicalKeyboardKey key) {
-    // Map for special keys
-    final specialKeys = {
-      LogicalKeyboardKey.escape: KeyCode.escape,
-      LogicalKeyboardKey.f1: KeyCode.f1,
-      LogicalKeyboardKey.f2: KeyCode.f2,
-      LogicalKeyboardKey.f3: KeyCode.f3,
-      LogicalKeyboardKey.f4: KeyCode.f4,
-      LogicalKeyboardKey.f5: KeyCode.f5,
-      LogicalKeyboardKey.f6: KeyCode.f6,
-      LogicalKeyboardKey.f7: KeyCode.f7,
-      LogicalKeyboardKey.f8: KeyCode.f8,
-      LogicalKeyboardKey.f9: KeyCode.f9,
-      LogicalKeyboardKey.f10: KeyCode.f10,
-      LogicalKeyboardKey.f11: KeyCode.f11,
-      LogicalKeyboardKey.f12: KeyCode.f12,
-      LogicalKeyboardKey.space: KeyCode.space,
-    };
-
-    // Check special keys first
-    if (specialKeys.containsKey(key)) {
-      return specialKeys[key];
-    }
-
-    // Handle letter keys
-    final keyLabel = key.keyLabel.toLowerCase();
-    if (keyLabel.length == 1 && keyLabel.contains(RegExp(r'[a-z]'))) {
-      try {
-        return KeyCode.values.firstWhere(
-          (k) => k.toString().toLowerCase() == 'keycode.key$keyLabel',
-        );
-      } catch (e) {
-        return null;
-      }
-    }
-
-    return null;
-  }
-
-  void _handleKeyEvent(RawKeyEvent event) {
-    if (event is RawKeyDownEvent) {
-      // Handle modifiers
-      if (event.isAltPressed) {
-        _activeModifiers.add(KeyModifier.alt);
-      }
-      if (event.isControlPressed) {
-        _activeModifiers.add(KeyModifier.control);
-      }
-      if (event.isShiftPressed) {
-        _activeModifiers.add(KeyModifier.shift);
-      }
-      if (event.isMetaPressed) {
-        _activeModifiers.add(KeyModifier.meta);
-      }
-
-      // Handle regular keys
-      final keyCode = _mapLogicalKeyToKeyCode(event.logicalKey);
-      if (keyCode != null) {
-        _activeKey = keyCode;
-        if (_activeModifiers.isNotEmpty) {
-          widget.onHotkeyRecorded(
-            HotKey(
-              keyCode,
-              modifiers: _activeModifiers.toList(),
-              scope: HotKeyScope.system,
-            ),
-          );
+    try {
+      for (final key in _recordedKeys) {
+        if (_isModifierKey(key)) {
+          final modifier = _convertToKeyModifier(key);
+          if (!modifiers.contains(modifier)) {
+            modifiers.add(modifier);
+          }
+        } else {
+          final keyCode = _logicalKeyToKeyCode(key);
+          if (!nonModifierKeys.contains(keyCode)) {
+            nonModifierKeys.add(keyCode);
+          }
         }
       }
 
-      setState(() {});
-    } else if (event is RawKeyUpEvent) {
-      // Clear modifiers when released
-      if (!event.isAltPressed) {
-        _activeModifiers.remove(KeyModifier.alt);
-      }
-      if (!event.isControlPressed) {
-        _activeModifiers.remove(KeyModifier.control);
-      }
-      if (!event.isShiftPressed) {
-        _activeModifiers.remove(KeyModifier.shift);
-      }
-      if (!event.isMetaPressed) {
-        _activeModifiers.remove(KeyModifier.meta);
+      if (nonModifierKeys.isEmpty && modifiers.isNotEmpty) {
+        _errorMessage = 'Add at least one non-modifier key';
+        return 'Invalid: Only modifier keys';
       }
 
-      setState(() {});
+      _errorMessage = null;
+      if (nonModifierKeys.isEmpty) {
+        return 'Invalid hotkey combination';
+      }
+
+      // Create a display string for all keys
+      final nonModifierDisplay = nonModifierKeys.map((k) => _keyCodeToDisplayString(k)).join(' + ');
+      final modifierDisplay = modifiers.isEmpty ? '' : '${modifiers.map((m) => _modifierToDisplayString(m)).join(' + ')} + ';
+      return '$modifierDisplay$nonModifierDisplay';
+    } catch (e) {
+      _errorMessage = 'Invalid key combination';
+      return 'Invalid key combination';
+    }
+  }
+
+  String _keyCodeToDisplayString(KeyCode keyCode) {
+    final keyString = keyCode.toString().replaceAll('KeyCode.', '');
+    if (keyString.startsWith('key')) {
+      return keyString.substring(3).toUpperCase();
+    }
+    return keyString.substring(0, 1).toUpperCase() + keyString.substring(1);
+  }
+
+  String _modifierToDisplayString(KeyModifier modifier) {
+    switch (modifier) {
+      case KeyModifier.control:
+        return 'Ctrl';
+      case KeyModifier.shift:
+        return 'Shift';
+      case KeyModifier.alt:
+        return 'Alt';
+      case KeyModifier.meta:
+        return 'Win';
+      default:
+        return modifier.toString().split('.').last;
+    }
+  }
+
+  KeyModifier _convertToKeyModifier(LogicalKeyboardKey key) {
+    if (key == LogicalKeyboardKey.control ||
+        key == LogicalKeyboardKey.controlLeft ||
+        key == LogicalKeyboardKey.controlRight) {
+      return KeyModifier.control;
+    } else if (key == LogicalKeyboardKey.shift ||
+               key == LogicalKeyboardKey.shiftLeft ||
+               key == LogicalKeyboardKey.shiftRight) {
+      return KeyModifier.shift;
+    } else if (key == LogicalKeyboardKey.alt ||
+               key == LogicalKeyboardKey.altLeft ||
+               key == LogicalKeyboardKey.altRight) {
+      return KeyModifier.alt;
+    } else if (key == LogicalKeyboardKey.meta ||
+               key == LogicalKeyboardKey.metaLeft ||
+               key == LogicalKeyboardKey.metaRight) {
+      return KeyModifier.meta;
+    }
+    throw Exception('Unknown modifier key');
+  }
+
+  void _handleKeyEvent(KeyEvent event) {
+    if (!_isRecording) return;
+
+    if (event is KeyDownEvent) {
+      setState(() {
+        // If it's a non-modifier key, clear any existing non-modifier keys
+        if (!_isModifierKey(event.logicalKey)) {
+          _recordedKeys.removeWhere((key) => !_isModifierKey(key));
+        }
+        _recordedKeys.add(event.logicalKey);
+        _errorMessage = null;
+      });
+    }
+  }
+
+  void _resetHotkey() {
+    setState(() {
+      _recordedKeys.clear();
+      _errorMessage = null;
+    });
+    _focusNode.requestFocus();
+  }
+
+  void _saveHotkey() {
+    if (_recordedKeys.isEmpty) return;
+
+    final modifiers = <KeyModifier>[];
+    final nonModifierKeys = <KeyCode>[];
+
+    for (final key in _recordedKeys) {
+      if (_isModifierKey(key)) {
+        final modifier = _convertToKeyModifier(key);
+        if (!modifiers.contains(modifier)) {
+          modifiers.add(modifier);
+        }
+      } else {
+        final keyCode = _logicalKeyToKeyCode(key);
+        if (!nonModifierKeys.contains(keyCode)) {
+          nonModifierKeys.add(keyCode);
+        }
+      }
+    }
+
+    if (nonModifierKeys.isNotEmpty) {
+      setState(() => _isRecording = false);
+      widget.onHotkeyRecorded(HotKey(nonModifierKeys.first, modifiers: modifiers));
+    }
+  }
+
+  bool _isModifierKey(LogicalKeyboardKey key) {
+    return key == LogicalKeyboardKey.control ||
+           key == LogicalKeyboardKey.controlLeft ||
+           key == LogicalKeyboardKey.controlRight ||
+           key == LogicalKeyboardKey.shift ||
+           key == LogicalKeyboardKey.shiftLeft ||
+           key == LogicalKeyboardKey.shiftRight ||
+           key == LogicalKeyboardKey.alt ||
+           key == LogicalKeyboardKey.altLeft ||
+           key == LogicalKeyboardKey.altRight;
+  }
+
+  KeyCode _logicalKeyToKeyCode(LogicalKeyboardKey key) {
+    // Map common keys
+    final keyLabel = key.keyLabel.toLowerCase();
+    if (keyLabel.length == 1 && keyLabel.contains(RegExp(r'[a-z]'))) {
+      return KeyCode.values.firstWhere(
+        (k) => k.toString().toLowerCase() == 'keycode.key$keyLabel',
+        orElse: () => throw Exception('Unsupported key'),
+      );
+    }
+
+    // Map function keys
+    if (key.keyLabel.toLowerCase().startsWith('f') && 
+        key.keyLabel.substring(1).contains(RegExp(r'^\d+$'))) {
+      return KeyCode.values.firstWhere(
+        (k) => k.toString().toLowerCase() == 'keycode.${key.keyLabel.toLowerCase()}',
+        orElse: () => throw Exception('Unsupported key'),
+      );
+    }
+
+    // Map special keys
+    switch (key) {
+      case LogicalKeyboardKey.space:
+        return KeyCode.space;
+      case LogicalKeyboardKey.enter:
+        return KeyCode.enter;
+      case LogicalKeyboardKey.tab:
+        return KeyCode.tab;
+      case LogicalKeyboardKey.escape:
+        return KeyCode.escape;
+      default:
+        throw Exception('Unsupported key');
     }
   }
 } 
