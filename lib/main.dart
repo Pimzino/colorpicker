@@ -32,8 +32,8 @@ void main() async {
   await windowManager.setMaximumSize(const Size(900, 700));
   await windowManager.center();
   await windowManager.setTitleBarStyle(TitleBarStyle.hidden);
+  await windowManager.setResizable(false);
   await windowManager.show();
-  await windowManager.setPreventClose(true);
   await windowManager.setSkipTaskbar(false);
   
   developer.log('Running MyApp');
@@ -95,6 +95,11 @@ class _MyHomePageState extends State<MyHomePage> with WindowListener {
   void dispose() {
     windowManager.removeListener(this);
     super.dispose();
+  }
+
+  @override
+  void onWindowClose() {
+    windowManager.destroy();
   }
 
   Future<void> _initializeApp() async {
@@ -236,16 +241,6 @@ class _MyHomePageState extends State<MyHomePage> with WindowListener {
                   icon: Icons.minimize,
                   onPressed: () async {
                     await windowManager.minimize();
-                  },
-                ),
-                _WindowButton(
-                  icon: Icons.crop_square,
-                  onPressed: () async {
-                    if (await windowManager.isMaximized()) {
-                      await windowManager.unmaximize();
-                    } else {
-                      await windowManager.maximize();
-                    }
                   },
                 ),
                 _WindowButton(
