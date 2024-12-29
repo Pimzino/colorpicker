@@ -11,7 +11,7 @@ class ColorHistoryEntry {
 
   Map<String, dynamic> toJson() {
     return {
-      'color': color.value,
+      'color': (color.a.toInt() << 24) | (color.r.toInt() << 16) | (color.g.toInt() << 8) | color.b.toInt(),
       'timestamp': timestamp.toIso8601String(),
     };
   }

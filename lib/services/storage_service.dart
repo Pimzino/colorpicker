@@ -119,7 +119,10 @@ class StorageService {
 
     history.removeWhere(
       (entry) => 
-        entry.color.value == entryToRemove.color.value && 
+        entry.color.a == entryToRemove.color.a &&
+        entry.color.r == entryToRemove.color.r &&
+        entry.color.g == entryToRemove.color.g &&
+        entry.color.b == entryToRemove.color.b && 
         entry.timestamp.isAtSameMomentAs(entryToRemove.timestamp)
     );
 

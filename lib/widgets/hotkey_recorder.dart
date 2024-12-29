@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
-import '../services/settings_service.dart';
-import 'package:provider/provider.dart';
 
 class HotkeyRecorder extends StatefulWidget {
   final Function(HotKey) onHotkeyRecorded;
@@ -19,7 +17,7 @@ class HotkeyRecorder extends StatefulWidget {
 }
 
 class _HotkeyRecorderState extends State<HotkeyRecorder> {
-  Set<LogicalKeyboardKey> _recordedKeys = {};
+  final Set<LogicalKeyboardKey> _recordedKeys = {};
   bool _isRecording = true;
   final FocusNode _focusNode = FocusNode();
   String? _errorMessage;
@@ -95,7 +93,7 @@ class _HotkeyRecorderState extends State<HotkeyRecorder> {
                 border: Border.all(
                   color: _errorMessage != null 
                     ? Theme.of(context).colorScheme.error
-                    : Theme.of(context).colorScheme.outline.withOpacity(0.5),
+                    : Theme.of(context).colorScheme.outline.withAlpha(128),
                 ),
               ),
               child: Column(

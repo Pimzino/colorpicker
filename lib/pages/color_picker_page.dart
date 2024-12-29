@@ -36,7 +36,7 @@ class ColorPickerPage extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withAlpha(26),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),
@@ -57,9 +57,9 @@ class ColorPickerPage extends StatelessWidget {
                           style: Theme.of(context).textTheme.titleLarge,
                         ),
                         const SizedBox(height: 16),
-                        _buildColorValue('HEX', '#${selectedColor.value.toRadixString(16).padLeft(8, '0').toUpperCase()}'),
+                        _buildColorValue('HEX', '#${(selectedColor.a.toInt() << 24 | selectedColor.r.toInt() << 16 | selectedColor.g.toInt() << 8 | selectedColor.b.toInt()).toRadixString(16).padLeft(8, '0').toUpperCase()}'),
                         const Divider(),
-                        _buildColorValue('RGB', '${selectedColor.red}, ${selectedColor.green}, ${selectedColor.blue}'),
+                        _buildColorValue('RGB', '${selectedColor.r.toInt()}, ${selectedColor.g.toInt()}, ${selectedColor.b.toInt()}'),
                         const Divider(),
                         _buildColorValue(
                           'CMYK',

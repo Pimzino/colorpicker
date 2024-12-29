@@ -42,7 +42,7 @@ class HotkeysSection extends StatelessWidget {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                               decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.5),
+                                color: Theme.of(context).colorScheme.surfaceContainerHighest.withAlpha(128),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Row(

@@ -11,7 +11,8 @@ import 'pages/settings_page.dart';
 import 'pages/history_page.dart';
 import 'dart:developer' as developer;
 import 'services/theme_service.dart';
-import 'services/storage_service.dart';
+import 'services/update_service.dart';
+import 'widgets/splash_screen.dart';
 
 void main() async {
   developer.log('Flutter initialized');
@@ -41,8 +42,30 @@ void main() async {
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  bool _showSplash = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _handleSplashScreen();
+  }
+
+  Future<void> _handleSplashScreen() async {
+    await Future.delayed(const Duration(seconds: 2));
+    if (mounted) {
+      setState(() {
+        _showSplash = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,6 +74,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => SettingsService()),
         ChangeNotifierProvider(create: (_) => ColorPickerService()),
         ChangeNotifierProvider(create: (_) => ThemeService()),
+        ChangeNotifierProvider(create: (_) => UpdateService()),
       ],
       child: Consumer<ThemeService>(
         builder: (context, themeService, _) => MaterialApp(
@@ -60,9 +84,9 @@ class MyApp extends StatelessWidget {
             colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
             useMaterial3: true,
             scrollbarTheme: const ScrollbarThemeData(
-              thickness: MaterialStatePropertyAll(0),
-              thumbVisibility: MaterialStatePropertyAll(false),
-              trackVisibility: MaterialStatePropertyAll(false),
+              thickness: WidgetStatePropertyAll(0),
+              thumbVisibility: WidgetStatePropertyAll(false),
+              trackVisibility: WidgetStatePropertyAll(false),
             ),
           ),
           darkTheme: ThemeData.dark(useMaterial3: true).copyWith(
@@ -71,13 +95,13 @@ class MyApp extends StatelessWidget {
               brightness: Brightness.dark,
             ),
             scrollbarTheme: const ScrollbarThemeData(
-              thickness: MaterialStatePropertyAll(0),
-              thumbVisibility: MaterialStatePropertyAll(false),
-              trackVisibility: MaterialStatePropertyAll(false),
+              thickness: WidgetStatePropertyAll(0),
+              thumbVisibility: WidgetStatePropertyAll(false),
+              trackVisibility: WidgetStatePropertyAll(false),
             ),
           ),
           themeMode: themeService.themeMode,
-          home: const MyHomePage(),
+          home: _showSplash ? const SplashScreen() : const MyHomePage(),
         ),
       ),
     );
@@ -127,6 +151,12 @@ class _MyHomePageState extends State<MyHomePage> with WindowListener {
       
       // Start color updates
       _startColorUpdates();
+      
+      // Check for updates
+      if (mounted) {
+        final updateService = Provider.of<UpdateService>(context, listen: false);
+        updateService.checkForUpdatesIfNeeded(context);
+      }
       
       _isInitialized = true;
     } catch (e) {
@@ -179,14 +209,16 @@ class _MyHomePageState extends State<MyHomePage> with WindowListener {
     ScaffoldMessenger.of(context).clearSnackBars();
     
     Clipboard.setData(ClipboardData(text: value)).then((_) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Copied to clipboard: $value'),
-          behavior: SnackBarBehavior.floating,
-          width: 300,
-          duration: const Duration(milliseconds: 1500),
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Copied to clipboard: $value'),
+            behavior: SnackBarBehavior.floating,
+            width: 300,
+            duration: const Duration(milliseconds: 1500),
+          ),
+        );
+      }
     });
   }
 
@@ -231,9 +263,10 @@ class _MyHomePageState extends State<MyHomePage> with WindowListener {
                           tooltip: 'Buy Me a Coffee',
                           onPressed: () async {
                             final Uri url = Uri.parse('https://www.buymeacoffee.com/Pimzino');
+                            final messenger = ScaffoldMessenger.of(context);
                             if (!await launchUrl(url)) {
                               if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
+                                messenger.showSnackBar(
                                   const SnackBar(
                                     content: Text('Could not open donation link'),
                                     behavior: SnackBarBehavior.floating,
@@ -343,8 +376,8 @@ class _WindowButton extends StatelessWidget {
         shape: const RoundedRectangleBorder(),
         foregroundColor: Theme.of(context).colorScheme.onSurface,
         hoverColor: isClose 
-          ? Theme.of(context).colorScheme.error.withOpacity(0.1)
-          : Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+          ? Theme.of(context).colorScheme.error.withAlpha(25)
+          : Theme.of(context).colorScheme.onSurface.withAlpha(25),
       ),
     );
   }

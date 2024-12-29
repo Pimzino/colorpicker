@@ -16,40 +16,6 @@ class HistoryPage extends StatefulWidget {
 }
 
 class _HistoryPageState extends State<HistoryPage> {
-  Future<void> _deleteHistoryEntry(ColorHistoryEntry entry) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Color'),
-        content: const Text('Are you sure you want to delete this color from history?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true) {
-      await StorageService.removeFromHistory(entry);
-      if (mounted) {
-        setState(() {});
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Color deleted from history'),
-            behavior: SnackBarBehavior.floating,
-            width: 200,
-          ),
-        );
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -171,9 +137,9 @@ class _ColorHistoryTile extends StatelessWidget {
   });
 
   String _getCmykString() {
-    final r = entry.color.red / 255;
-    final g = entry.color.green / 255;
-    final b = entry.color.blue / 255;
+    final r = entry.color.r / 255;
+    final g = entry.color.g / 255;
+    final b = entry.color.b / 255;
 
     final k = 1 - [r, g, b].reduce((a, b) => a > b ? a : b);
     final c = k == 1 ? 0 : ((1 - r - k) / (1 - k) * 100).round();
@@ -186,8 +152,10 @@ class _ColorHistoryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hexColor = '#${entry.color.value.toRadixString(16).padLeft(8, '0').substring(2)}';
-    final rgbColor = 'RGB(${entry.color.red}, ${entry.color.green}, ${entry.color.blue})';
+    final hexColor = '#${(entry.color.r).round().toRadixString(16).padLeft(2, '0')}'
+                    '${(entry.color.g).round().toRadixString(16).padLeft(2, '0')}'
+                    '${(entry.color.b).round().toRadixString(16).padLeft(2, '0')}';
+    final rgbColor = 'RGB(${entry.color.r}, ${entry.color.g}, ${entry.color.b})';
     final cmykColor = _getCmykString();
     final dateStr = DateFormat('MMM d, y h:mm a').format(entry.timestamp);
 
@@ -219,7 +187,7 @@ class _ColorHistoryTile extends StatelessWidget {
                     color: entry.color,
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: Theme.of(context).colorScheme.outline.withOpacity(0.5),
+                      color: Theme.of(context).colorScheme.outline.withAlpha(128),
                     ),
                   ),
                 ),

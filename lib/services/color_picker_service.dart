@@ -7,7 +7,7 @@ import 'storage_service.dart';
 class ColorPickerService extends ChangeNotifier {
   bool _isPicking = false;
   Color _currentColor = Colors.white;
-  static const int CLR_INVALID = 0xFFFFFFFF;
+  static const int clrInvalid = 0xFFFFFFFF;
 
   bool get isActive => _isPicking;
   Color get currentColor => _currentColor;
@@ -38,7 +38,7 @@ class ColorPickerService extends ChangeNotifier {
       final colorRef = GetPixel(hdc, point.ref.x, point.ref.y);
       ReleaseDC(NULL, hdc);
 
-      if (colorRef != CLR_INVALID) {
+      if (colorRef != clrInvalid) {
         _currentColor = Color.fromARGB(
           255,
           GetRValue(colorRef),
@@ -53,9 +53,9 @@ class ColorPickerService extends ChangeNotifier {
   }
 
   Map<String, double> rgbToCmyk(Color color) {
-    double r = color.red / 255;
-    double g = color.green / 255;
-    double b = color.blue / 255;
+    double r = color.r / 255;
+    double g = color.g / 255;
+    double b = color.b / 255;
 
     double k = 1 - [r, g, b].reduce((a, b) => a > b ? a : b);
     double c = k == 1 ? 0 : (1 - r - k) / (1 - k);

@@ -33,14 +33,14 @@ class ColorValuesSection extends StatelessWidget {
               children: [
                 ColorValueTile(
                   label: 'HEX',
-                  value: '#${selectedColor.value.toRadixString(16).padLeft(8, '0').toUpperCase()}',
-                  onCopy: () => onCopy('#${selectedColor.value.toRadixString(16).padLeft(8, '0').toUpperCase()}'),
+                  value: '#${(selectedColor.a.toInt() << 24 | selectedColor.r.toInt() << 16 | selectedColor.g.toInt() << 8 | selectedColor.b.toInt()).toRadixString(16).padLeft(8, '0').toUpperCase()}',
+                  onCopy: () => onCopy('#${(selectedColor.a.toInt() << 24 | selectedColor.r.toInt() << 16 | selectedColor.g.toInt() << 8 | selectedColor.b.toInt()).toRadixString(16).padLeft(8, '0').toUpperCase()}'),
                 ),
                 const Divider(),
                 ColorValueTile(
                   label: 'RGB',
-                  value: '${selectedColor.red}, ${selectedColor.green}, ${selectedColor.blue}',
-                  onCopy: () => onCopy('${selectedColor.red}, ${selectedColor.green}, ${selectedColor.blue}'),
+                  value: '${selectedColor.r.toInt()}, ${selectedColor.g.toInt()}, ${selectedColor.b.toInt()}',
+                  onCopy: () => onCopy('${selectedColor.r.toInt()}, ${selectedColor.g.toInt()}, ${selectedColor.b.toInt()}'),
                 ),
                 const Divider(),
                 ColorValueTile(
