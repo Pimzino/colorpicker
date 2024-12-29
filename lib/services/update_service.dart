@@ -15,6 +15,23 @@ class UpdateService extends ChangeNotifier {
   bool _isDownloading = false;
   double _downloadProgress = 0.0;
 
+  // Helper method to get the correct installer asset based on platform
+  static Map<String, dynamic>? _getInstallerAsset(List assets) {
+    final platform = Platform.isMacOS ? 'mac' : 'win';
+    final arch = Platform.isMacOS ? 'x64' : 'x64'; // Currently only supporting x64
+    final pattern = RegExp('colorpicker_${platform}_${arch}_[0-9.]+');
+
+    try {
+      return assets.firstWhere(
+        (asset) => pattern.hasMatch(asset['name'].toString().toLowerCase()),
+        orElse: () => null,
+      );
+    } catch (e) {
+      debugPrint('Failed to find installer asset: $e');
+      return null;
+    }
+  }
+
   void checkForUpdatesIfNeeded(BuildContext context) {
     if (_hasCheckedForUpdates) return;
     _hasCheckedForUpdates = true;
@@ -36,13 +53,10 @@ class UpdateService extends ChangeNotifier {
         
         // Get the installer asset URL
         final assets = data['assets'] as List;
-        final installerAsset = assets.firstWhere(
-          (asset) => asset['name'].toString().toLowerCase().endsWith('.exe'),
-          orElse: () => null,
-        );
+        final installerAsset = _getInstallerAsset(assets);
 
         if (installerAsset == null) {
-          debugPrint('No installer found in release');
+          debugPrint('No installer found in release for ${Platform.isMacOS ? 'macOS' : 'Windows'}');
           return;
         }
 
@@ -73,13 +87,10 @@ class UpdateService extends ChangeNotifier {
         
         // Get the installer asset URL
         final assets = data['assets'] as List;
-        final installerAsset = assets.firstWhere(
-          (asset) => asset['name'].toString().toLowerCase().endsWith('.exe'),
-          orElse: () => null,
-        );
+        final installerAsset = _getInstallerAsset(assets);
 
         if (installerAsset == null) {
-          throw 'No installer found in release';
+          throw 'No installer found in release for ${Platform.isMacOS ? 'macOS' : 'Windows'}';
         }
 
         final downloadUrl = installerAsset['browser_download_url'] as String;
