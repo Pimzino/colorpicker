@@ -57,9 +57,9 @@ class ColorPickerPage extends StatelessWidget {
                           style: Theme.of(context).textTheme.titleLarge,
                         ),
                         const SizedBox(height: 16),
-                        _buildColorValue('HEX', '#${(selectedColor.a.toInt() << 24 | selectedColor.r.toInt() << 16 | selectedColor.g.toInt() << 8 | selectedColor.b.toInt()).toRadixString(16).padLeft(8, '0').toUpperCase()}'),
+                        _buildColorValue('HEX', '#${(selectedColor.value & 0xFFFFFF).toRadixString(16).padLeft(6, '0').toUpperCase()}'),
                         const Divider(),
-                        _buildColorValue('RGB', '${selectedColor.r.toInt()}, ${selectedColor.g.toInt()}, ${selectedColor.b.toInt()}'),
+                        _buildColorValue('RGB', 'RGB(${(selectedColor.value >> 16) & 0xFF}, ${(selectedColor.value >> 8) & 0xFF}, ${selectedColor.value & 0xFF})'),
                         const Divider(),
                         _buildColorValue(
                           'CMYK',

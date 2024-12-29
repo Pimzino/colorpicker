@@ -137,9 +137,10 @@ class _ColorHistoryTile extends StatelessWidget {
   });
 
   String _getCmykString() {
-    final r = entry.color.r / 255;
-    final g = entry.color.g / 255;
-    final b = entry.color.b / 255;
+    final colorValue = entry.color.value;
+    final r = ((colorValue >> 16) & 0xFF) / 255.0;
+    final g = ((colorValue >> 8) & 0xFF) / 255.0;
+    final b = (colorValue & 0xFF) / 255.0;
 
     final k = 1 - [r, g, b].reduce((a, b) => a > b ? a : b);
     final c = k == 1 ? 0 : ((1 - r - k) / (1 - k) * 100).round();
@@ -152,10 +153,16 @@ class _ColorHistoryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hexColor = '#${(entry.color.r).round().toRadixString(16).padLeft(2, '0')}'
-                    '${(entry.color.g).round().toRadixString(16).padLeft(2, '0')}'
-                    '${(entry.color.b).round().toRadixString(16).padLeft(2, '0')}';
-    final rgbColor = 'RGB(${entry.color.r}, ${entry.color.g}, ${entry.color.b})';
+    // Get raw RGB values from color
+    final colorValue = entry.color.value;
+    final r = (colorValue >> 16) & 0xFF;
+    final g = (colorValue >> 8) & 0xFF;
+    final b = colorValue & 0xFF;
+    
+    final hexColor = '#${r.toRadixString(16).padLeft(2, '0')}'
+                    '${g.toRadixString(16).padLeft(2, '0')}'
+                    '${b.toRadixString(16).padLeft(2, '0')}';
+    final rgbColor = 'RGB($r, $g, $b)';
     final cmykColor = _getCmykString();
     final dateStr = DateFormat('MMM d, y h:mm a').format(entry.timestamp);
 

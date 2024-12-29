@@ -39,12 +39,10 @@ class ColorPickerService extends ChangeNotifier {
       ReleaseDC(NULL, hdc);
 
       if (colorRef != clrInvalid) {
-        _currentColor = Color.fromARGB(
-          255,
-          GetRValue(colorRef),
-          GetGValue(colorRef),
-          GetBValue(colorRef),
-        );
+        final r = GetRValue(colorRef);
+        final g = GetGValue(colorRef);
+        final b = GetBValue(colorRef);
+        _currentColor = Color(0xFF000000 | (r << 16) | (g << 8) | b);
         notifyListeners();
       }
     } finally {
@@ -53,14 +51,14 @@ class ColorPickerService extends ChangeNotifier {
   }
 
   Map<String, double> rgbToCmyk(Color color) {
-    double r = color.r / 255;
-    double g = color.g / 255;
-    double b = color.b / 255;
+    final r = ((color.value >> 16) & 0xFF) / 255.0;
+    final g = ((color.value >> 8) & 0xFF) / 255.0;
+    final b = (color.value & 0xFF) / 255.0;
 
-    double k = 1 - [r, g, b].reduce((a, b) => a > b ? a : b);
-    double c = k == 1 ? 0 : (1 - r - k) / (1 - k);
-    double m = k == 1 ? 0 : (1 - g - k) / (1 - k);
-    double y = k == 1 ? 0 : (1 - b - k) / (1 - k);
+    final k = 1 - [r, g, b].reduce((a, b) => a > b ? a : b);
+    final c = k == 1 ? 0 : (1 - r - k) / (1 - k);
+    final m = k == 1 ? 0 : (1 - g - k) / (1 - k);
+    final y = k == 1 ? 0 : (1 - b - k) / (1 - k);
 
     return {
       'c': (c * 100).round().toDouble(),

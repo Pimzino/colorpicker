@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:flutter/material.dart' show Colors;
 
 class ColorHistoryEntry {
   final Color color;
@@ -11,15 +12,37 @@ class ColorHistoryEntry {
 
   Map<String, dynamic> toJson() {
     return {
-      'color': (color.a.toInt() << 24) | (color.r.toInt() << 16) | (color.g.toInt() << 8) | color.b.toInt(),
+      'color': color.value & 0xFFFFFF,
       'timestamp': timestamp.toIso8601String(),
     };
   }
 
   factory ColorHistoryEntry.fromJson(Map<String, dynamic> json) {
-    return ColorHistoryEntry(
-      color: Color(json['color'] as int),
-      timestamp: DateTime.parse(json['timestamp'] as String),
-    );
+    try {
+      // Handle new format (single integer)
+      if (json['color'] is int) {
+        return ColorHistoryEntry(
+          color: Color(0xFF000000 | (json['color'] as int)),
+          timestamp: DateTime.parse(json['timestamp'] as String),
+        );
+      }
+      
+      // Handle old format (map with RGBA)
+      final colorMap = json['color'] as Map<String, dynamic>;
+      final r = colorMap['r'] as int;
+      final g = colorMap['g'] as int;
+      final b = colorMap['b'] as int;
+      
+      return ColorHistoryEntry(
+        color: Color(0xFF000000 | (r << 16) | (g << 8) | b),
+        timestamp: DateTime.parse(json['timestamp'] as String),
+      );
+    } catch (e) {
+      // If anything goes wrong, return a default color
+      return ColorHistoryEntry(
+        color: Colors.white,
+        timestamp: DateTime.now(),
+      );
+    }
   }
 } 
