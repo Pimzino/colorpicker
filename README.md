@@ -40,19 +40,28 @@ A modern, sleek desktop color picker application for Windows and macOS.
 
 ## Screenshots
 
-[Screenshots of the application in action]
+<div align="center">
+
+### Color Picker
+![Color Picker](assets/screenshots/Color%20Picker.png)
+
+### Color History
+![History](assets/screenshots/History.png)
+
+### Settings
+![Settings](assets/screenshots/Settings.png)
+
+</div>
 
 ## Installation
 
 ### Windows
 1. Download the latest installer from the [Releases](https://github.com/Pimzino/ColorPicker/releases) page
 2. Run the installer
-3. Launch Color Picker from the Start Menu
+3. Launch Color Picker from the Start Menu or from the desktop shortcut
 
 ### macOS
-1. Download the latest package from the [Releases](https://github.com/Pimzino/ColorPicker/releases) page
-2. Open the package
-3. Drag Color Picker to your Applications folder
+Coming Soon, but you can build it from source.
 
 ## Building from Source
 
@@ -131,11 +140,10 @@ This project is licensed under the GNU General Public License v3.0 - see the [LI
 ## Credits
 
 - **Developer**: [Pimzino](https://github.com/Pimzino)
-- **Contributors**: [List of contributors]
-- **Icons**: [Icon credits if applicable]
+- **Contributors**: @pimzino
+- **Icons**: Google Material Icons
 
 ## Acknowledgments
 
 - Thanks to the Flutter team for the amazing framework
-- All the contributors who have helped with the project
 - The open-source community for their invaluable tools and libraries
