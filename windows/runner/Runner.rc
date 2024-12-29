@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "colorpicker" "\0"
+            VALUE "CompanyName", "Pimzino" "\0"
+            VALUE "FileDescription", "Color Picker - Modern Desktop Color Picker Tool" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "colorpicker" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2024 com.example. All rights reserved." "\0"
-            VALUE "OriginalFilename", "colorpicker.exe" "\0"
-            VALUE "ProductName", "colorpicker" "\0"
+            VALUE "InternalName", "Color Picker" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2024 Pimzino. All rights reserved." "\0"
+            VALUE "OriginalFilename", "ColorPicker.exe" "\0"
+            VALUE "ProductName", "Color Picker" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

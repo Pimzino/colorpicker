@@ -60,15 +60,19 @@ class UpdateService extends ChangeNotifier {
         // Compare versions
         final hasUpdate = _compareVersions(appVersion, latestVersion);
         return (hasUpdate, latestVersion, downloadUrl);
+      } else if (response.statusCode == 404) {
+        throw 'No releases found. Please check back later.';
+      } else {
+        throw 'Failed to check for updates (Status ${response.statusCode})';
       }
-    } on SocketException catch (e) {
-      debugPrint('No internet connection available: $e');
-      rethrow;
+    } on SocketException {
+      throw 'No internet connection available';
+    } on FormatException {
+      throw 'Invalid response from update server';
     } catch (e) {
-      debugPrint('Failed to check for updates: $e');
-      rethrow;
+      if (e is String) rethrow;
+      throw 'Unexpected error while checking for updates';
     }
-    return (false, '', '');
   }
 
   static bool _compareVersions(String current, String latest) {

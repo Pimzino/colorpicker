@@ -43,11 +43,11 @@ class _AboutSectionState extends State<AboutSection> {
           _isCheckingUpdate = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to check for updates'),
+          SnackBar(
+            content: Text(e.toString()),
             behavior: SnackBarBehavior.floating,
             width: 300,
-            duration: Duration(milliseconds: 1500),
+            duration: const Duration(seconds: 3),
           ),
         );
       }

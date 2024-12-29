@@ -106,3 +106,25 @@ install(DIRECTORY "${PROJECT_BUILD_DIR}/${FLUTTER_ASSET_DIR_NAME}"
 install(FILES "${AOT_LIBRARY}" DESTINATION "${INSTALL_BUNDLE_DATA_DIR}"
   CONFIGURATIONS Profile;Release
   COMPONENT Runtime)
+
+# Define build configuration option.
+get_filename_component(FLUTTER_ROOT "${PROJECT_SOURCE_DIR}/.flutter" REALPATH)
+if (NOT EXISTS "${FLUTTER_ROOT}")
+  set(FLUTTER_ROOT "$ENV{FLUTTER_ROOT}")
+endif()
+
+# Version information from pubspec.yaml
+execute_process(
+  COMMAND ${FLUTTER_ROOT}/bin/flutter --version
+  OUTPUT_VARIABLE FLUTTER_VERSION
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+string(REGEX MATCH "([0-9]+)\\.([0-9]+)\\.([0-9]+)" FLUTTER_VERSION_MATCH "${FLUTTER_VERSION}")
+set(FLUTTER_VERSION_MAJOR ${CMAKE_MATCH_1})
+set(FLUTTER_VERSION_MINOR ${CMAKE_MATCH_2})
+set(FLUTTER_VERSION_PATCH ${CMAKE_MATCH_3})
+set(FLUTTER_VERSION_BUILD 0)
+
+# Define the application target and specify the
+# required Flutter library dependencies.
