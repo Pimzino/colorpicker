@@ -2,6 +2,8 @@ name: color_picker
 description: A modern desktop color picker application for Windows and macOS.
 version: 1.0.0
 publish_to: 'none'
+homepage: https://github.com/Pimzino/ColorPicker
+license: MIT
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -21,6 +23,7 @@ dependencies:
   http: ^1.2.2
   url_launcher: ^6.3.1
   package_info_plus: ^8.1.2
+  path_provider: ^2.1.2
 
 dev_dependencies:
   flutter_test:
